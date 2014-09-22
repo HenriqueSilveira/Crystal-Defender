@@ -1,13 +1,17 @@
 local storyboard = require ("storyboard")
 local scene = storyboard.newScene ()
 
+--Cria a função global de apertar o botão, que redireciona o fluxo da storyboard para o destino do botão apertado.
 local function apertarBotao( event )
 	storyboard.gotoScene (event.target.destination, {effect = "fade"})
 	return true
 end
 
 function scene:createScene( event )
+	--Cria e inicializa o grupo de "visão" do jogo
 	local group = self.view
+
+	--Cria, posiciona e define o destino de cada botão do menu. Insere-os no grupo de visão.
 	local titulo = display.newText("Leveis", 0, 0, nil, 38)
 	titulo.x = centerX
 	titulo.y = display.screenOriginY+40
