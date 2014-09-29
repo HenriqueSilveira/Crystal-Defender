@@ -16,15 +16,14 @@ function scene:createScene( event )
 	local physics = require ("physics")
 	physics.start()
 	physics.setGravity (0,0)
-
 	--Cria um array com as posições que os monstros podem nascer e um array com todos os inimigos criados
 	local posY = {122, 366, 580}
 	local inimigosArray = {}
 
-	--Cria uma variável global com o número de inimigos criados e uma variável para recer o timer dos inimigos
+	--Cria uma variável global com o número de inimigos criados, uma variável para receber o timer dos inimigos e uma variável com o número de inimigos que a fase possui.
 	local numInimigos = 0
 	local tm
-	
+	local contInimigos = 3
 
 	--Inicializa e posiciona as imagens
 	local fundo = display.newImage ("Background.png")
@@ -60,6 +59,10 @@ function scene:createScene( event )
 	physics.addBody (objTeste, "static", {bounce = 0, density = 1, friction = 0})
 	objTeste.name = "personagem"
 	group:insert (objTeste)
+
+	-- Cria o contador com o número de inimigos restantes na fase.
+	local contador = display.newText ("Inimigos restantes: "..contInimigos, widthScn - 200, topScn + 30, nil, 35)
+	group:insert (contador)
 
 	--Cria o evento de apertar a seta para cima e move o personagem
 	function setaCima:tap (event)
@@ -99,7 +102,7 @@ function scene:createScene( event )
 
 	end
 
-	-- Função para criar e movimentar os monstros aleatoriamente. Chamada com looping infinito para criar os monstros
+	-- Função para criar e movimentar os monstros aleatoriamente. Chamada com o numero de monstros que o level exige.
 	function criarMonstro()
 		numInimigos = numInimigos + 1
 		inimigosArray [numInimigos] = display.newImage ("monstro.png")
@@ -112,9 +115,34 @@ function scene:createScene( event )
 
 		-- Movimenta os inimigos em linha reta até o cristal
 		transition.to (inimigosArray [numInimigos], {time = math.random(10000, 15000), x = cristais.x, y = inimigosArray [numInimigos].y})
-	
 	end
-	tm = timer.performWithDelay (5000, criarMonstro, 0)
+	tm = timer.performWithDelay (5000, criarMonstro, contInimigos)
+
+	--Função que encerra o jogo com a derrota do jogador e cria o botao para voltar a seleção de leveis. 
+	function fimDeJogo ()
+		timer.cancel (tm)
+		apagarInimigos ()
+		apagarFuncoes ()
+		transition.to (objTeste, {time=1000, alpha = 0})
+		local fimdejogotxt = display.newText ("Fim de Jogo", centerX, centerY, nil, 50)
+		fimdejogotxt.destination = "levels"
+		fimdejogotxt:addEventListener ("tap", apertarBotao)
+		group:insert (fimdejogotxt)
+	end
+
+	-- Função que encerra a fase com o jogador sendo vitorioso.
+	function jogoConcluido()
+		if contInimigos == 0 then
+			apagarInimigos ()
+			transition.to (objTeste, {time=1000, alpha = 0})
+			apagarFuncoes ()
+			local concluido = display.newText ("Você venceu!", centerX, centerY, nil, 50)
+			concluido.destination = "levels"
+			concluido:addEventListener ("tap", apertarBotao)
+			group:insert (concluido)
+		end	 
+	end	
+
 
 	--Cria o evento de detecção de colisão
 	function onCollision (event)
@@ -123,21 +151,14 @@ function scene:createScene( event )
 		if ((event.object1.name == "bala" and event.object2.name == "monstro") or (event.object1.name == "monstro" and event.object2.name == "bala")) then
 			display.remove (event.object1)
 			display.remove (event.object2)
+			contInimigos = contInimigos - 1
+			contador.text = "Inimigos restantes: "..contInimigos
+			jogoConcluido ()
 		end
 
 		--Detecta colisão entre o monstro e o cristal/personagem. Encerra o jogo
 		if ((event.object1.name == "cristal" and event.object2.name == "monstro") or (event.object1.name == "personagem" and event.object2.name == "monstro")) then
-
-			local function fimDeJogo ()
-				timer.cancel (tm)
-				apagarFuncoes ()
-				local fimdejogotxt = display.newText ("Fim de Jogo", centerX, centerY, nil, 50)
-				fimdejogotxt.destination = "levels"
-				fimdejogotxt:addEventListener ("tap", apertarBotao)
-				group:insert (fimdejogotxt)
-			end	
-			apagarInimigos ()
-			transition.to (objTeste, {time=1000, alpha = 0, onComplete = fimDeJogo})
+			fimDeJogo ()
 		end	
 	end
 
@@ -157,7 +178,9 @@ function scene:createScene( event )
 		display.remove (btnAtirar)
 		display.remove (setaCima)
 		display.remove (setaBaixo)
+		display.remove (contador)
 	end
+
 	-- Listeners dos botões e da detecção de colisão
 	setaCima:addEventListener ("tap", setaCima)
 	setaBaixo:addEventListener ("tap", setaBaixo)
