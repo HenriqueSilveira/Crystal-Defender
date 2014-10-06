@@ -1,8 +1,10 @@
 local storyboard = require ("storyboard")
 local scene = storyboard.newScene ()
+local cliqueSom = audio.loadSound ("Sons/click.mp3")
 
---Cria a função global de apertar o botão, que redireciona o fluxo da storyboard para o destino do botão apertado.
+--Cria a função global de apertar o botão, que redireciona o fluxo da storyboard para o destino do botão apertado.Toca o som de clique.
 local function apertarBotao( event )
+	audio.play (cliqueSom)
 	storyboard.gotoScene (event.target.destination, {effect = "fade"})
 	return true
 end
@@ -12,13 +14,14 @@ function scene:createScene( event )
 	local group = self.view
 
 	--Cria, posiciona e define o destino de cada botão do menu. Insere-os no grupo de visão.
-	local titulo = display.newText ("Créditos", 0, 0, nil, 38)
-	titulo.x = centerX
-	titulo.y = centerY
-	group:insert (titulo)	
+	local background = display.newImage ("Imagens/TelaCreditos.png")
+	background.x = centerX
+	background.y = centerY
+	group:insert(background)
 
-	local backBtn = display.newText("Voltar", 40, 0, nil, 25)
-	backBtn.y = heightScn - backBtn.height
+	local backBtn = display.newImage ("Imagens/botaoVoltar.png")
+	backBtn.x = 120
+	backBtn.y = heightScn - 50
 	backBtn.destination = "menu"
 	backBtn:addEventListener ("tap", apertarBotao)
 	group:insert (backBtn)
