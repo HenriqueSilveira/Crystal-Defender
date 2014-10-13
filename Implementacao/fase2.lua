@@ -25,6 +25,11 @@ function scene:createScene( event )
 	physics.start()
 	physics.setGravity (0,0)
 
+	--Faz a requisição do banco de dados, indica o arquivo do banco e inicializa o BD.
+	require "sqlite3"
+	local path = system.pathForFile( "data.db", system.DocumentsDirectory )
+	local db = sqlite3.open( path )
+
 	--Cria um array com as posições que os monstros podem nascer e um array com todos os inimigos criados
 	local posY = {122, 366, 580}
 	local inimigosArray = {}
@@ -260,12 +265,14 @@ function scene:createScene( event )
 		group:insert (derrotatxt)
 	end
 
-	-- Função que encerra a fase com o jogador sendo vitorioso. Altera o valor da variável progresso para liberar a próxima fase.
+	-- Função que encerra a fase com o jogador sendo vitorioso. Altera o valor da variável progresso através do BD e chama a função para atualizar a variável para liberar a próxima fase.
 	function vitoria()
 		if contInimigos == 0 then
 			encerra ()
 			if progresso < 2 then
-				progresso = 2
+				local atualizaProgresso = [[UPDATE tabelaProgresso SET valor=2 WHERE id=1;]]
+				db:exec(atualizaProgresso)
+				atualizaProgressoF ()
 			end	
 			local concluido = display.newText ("Você venceu!", centerX, centerY, nil, 50)
 			concluido.destination = "levels"
@@ -290,6 +297,13 @@ function scene:createScene( event )
 		--Detecta colisão entre o monstro e o cristal/personagem. Encerra o jogo
 		if ((event.object1.name == "cristal" and event.object2.name == "monstro") or (event.object1.name == "personagem" and event.object2.name == "monstro")) then
 			derrota ()
+		end	
+	end
+
+	--Função que detecta a movimentação do dispositivo e recarrega o cartucho.
+	function trataAcelerometro(event)
+		if event.isShake then
+			recarrega ()
 		end	
 	end
 
@@ -331,6 +345,7 @@ function scene:createScene( event )
 	setaBaixo:addEventListener ("tap", setaBaixo)
 	btnAtirar:addEventListener ("tap", btnAtirar)	
 	Runtime:addEventListener ("collision", onCollision)
+	Runtime:addEventListener ("accelerometer", trataAcelerometro)
 
 end
 

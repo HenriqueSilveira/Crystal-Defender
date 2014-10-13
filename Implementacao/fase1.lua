@@ -25,6 +25,11 @@ function scene:createScene( event )
 	physics.start()
 	physics.setGravity (0,0)
 
+	--Faz a requisição do banco de dados, indica o arquivo do banco e inicializa o BD.
+	require "sqlite3"
+	local path = system.pathForFile( "data.db", system.DocumentsDirectory )
+	local db = sqlite3.open( path )
+
 	--Cria um array com as posições que os monstros podem nascer e um array com todos os inimigos criados
 	local posY = {122, 366, 580}
 	local inimigosArray = {}
@@ -156,6 +161,11 @@ function scene:createScene( event )
 	btnAtirar.name = "btnAtirar"
 	group:insert (btnAtirar)
 
+	local instrucoes = display.newImage ("Imagens/Instrucoes.png")
+	instrucoes.x = centerX
+	instrucoes.y = centerY
+	group:insert (instrucoes)
+
 	-- Cria o contador com o número de inimigos restantes na fase.
 	local contador = display.newText ("Inimigos restantes: "..contInimigos, widthScn - 200, topScn + 30, nil, 35)
 	group:insert (contador)
@@ -186,6 +196,10 @@ function scene:createScene( event )
 		else	
 			personagem.y = personagem.y + 220
 		end	
+	end
+
+	function instrucoes:tap(event)
+		transition.fadeOut (instrucoes, {time = 1000})
 	end
 
 	--Função para recarregar o cartucho.
@@ -260,12 +274,14 @@ function scene:createScene( event )
 		group:insert (derrotatxt)
 	end
 
-	-- Função que encerra a fase com o jogador sendo vitorioso. Altera o valor da variável progresso para liberar a próxima fase.
+	-- Função que encerra a fase com o jogador sendo vitorioso. Altera o valor da variável progresso através do BD e chama a função para atualizar a variável para liberar a próxima fase.
 	function vitoria()
 		if contInimigos == 0 then
 			encerra ()
 			if progresso < 1 then
-				progresso = 1
+				local atualizaProgresso = [[UPDATE tabelaProgresso SET valor=1 WHERE id=1;]]
+				db:exec(atualizaProgresso)
+				atualizaProgressoF ()
 			end	
 			local concluido = display.newText ("Você venceu!", centerX, centerY, nil, 50)
 			concluido.destination = "levels"
@@ -293,6 +309,13 @@ function scene:createScene( event )
 		end	
 	end
 
+	--Função que detecta a movimentação do dispositivo e recarrega o cartucho.
+	function trataAcelerometro(event)
+		if event.isShake then
+			recarrega ()
+		end	
+	end
+
 	-- Função para apagar da tela e da memória o array com todos os inimigos
 	function apagarInimigos( )
 		for i=1, #inimigosArray do
@@ -315,6 +338,7 @@ function scene:createScene( event )
 		display.remove (reloading)
 		display.remove (contBalas)
 		display.remove (contBalasTxt)
+		display.remove (instrucoes)
 	end
 
 	--Função que limpa os inimigos, funções e troca o background. Faz Fade Out no personagem e cristal.
@@ -329,8 +353,10 @@ function scene:createScene( event )
 	-- Listeners dos botões e da detecção de colisão
 	setaCima:addEventListener ("tap", setaCima)
 	setaBaixo:addEventListener ("tap", setaBaixo)
-	btnAtirar:addEventListener ("tap", btnAtirar)	
+	btnAtirar:addEventListener ("tap", btnAtirar)
+	instrucoes:addEventListener ("tap", instrucoes)	
 	Runtime:addEventListener ("collision", onCollision)
+	Runtime:addEventListener ("accelerometer", trataAcelerometro)
 
 end
 
