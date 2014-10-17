@@ -25,10 +25,8 @@ function scene:createScene( event )
 	physics.start()
 	physics.setGravity (0,0)
 
-	--Faz a requisição do banco de dados, indica o arquivo do banco e inicializa o BD.
+	--Faz a requisição do banco de dados.
 	require "sqlite3"
-	local path = system.pathForFile( "data.db", system.DocumentsDirectory )
-	local db = sqlite3.open( path )
 
 	--Cria um array com as posições que os monstros podem nascer e um array com todos os inimigos criados
 	local posY = {122, 366, 580}
@@ -122,6 +120,8 @@ function scene:createScene( event )
 	personagem.y = 360
 	physics.addBody (personagem, "static", {bounce = 0, density = 1, friction = 0})
 	personagem.name = "personagem"
+	--personagem.vida = 10
+	--print (personagem.vida)
 	group:insert (personagem)
 
 	--Inicializa e posiciona as imagens
@@ -237,6 +237,10 @@ function scene:createScene( event )
 
 			--Recebe o objeto bala apos concluir a transição e a apaga
 			local apagarBala = function ( obj )
+					--if personagem.vida == 0 then
+					--	derrota()
+					--end	
+					--personagem.vida = personagem.vida - 1
 					display.remove (obj)
 			end
 			--Move a bala pela tela e muda sprite do personagem para atirando. Ativa também o delay entre disparos.
@@ -281,7 +285,6 @@ function scene:createScene( event )
 			if progresso < 1 then
 				local atualizaProgresso = [[UPDATE tabelaProgresso SET valor=1 WHERE id=1;]]
 				db:exec(atualizaProgresso)
-				atualizaProgressoF ()
 			end	
 			local concluido = display.newText ("Você venceu!", centerX, centerY, nil, 50)
 			concluido.destination = "levels"

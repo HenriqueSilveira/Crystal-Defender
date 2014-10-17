@@ -26,6 +26,7 @@ function scene:createScene( event )
 
 	--Função para checar o progresso do jogo e liberar novas fases. Chama a função logo após.
 	function checaProgresso()
+		atualizaProgressoF()
 		if progresso >= 1 then
 			local fase2 = display.newImage ("Imagens/fase2Desbloqueada.png")
 			fase2.x = centerX + 60 

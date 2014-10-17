@@ -25,10 +25,8 @@ function scene:createScene( event )
 	physics.start()
 	physics.setGravity (0,0)
 
-	--Faz a requisição do banco de dados, indica o arquivo do banco e inicializa o BD.
+	--Faz a requisição do banco de dados.
 	require "sqlite3"
-	local path = system.pathForFile( "data.db", system.DocumentsDirectory )
-	local db = sqlite3.open( path )
 
 	--Cria um array com as posições que os monstros podem nascer e um array com todos os inimigos criados
 	local posY = {122, 366, 580}
@@ -272,7 +270,6 @@ function scene:createScene( event )
 			if progresso < 2 then
 				local atualizaProgresso = [[UPDATE tabelaProgresso SET valor=2 WHERE id=1;]]
 				db:exec(atualizaProgresso)
-				atualizaProgressoF ()
 			end	
 			local concluido = display.newText ("Você venceu!", centerX, centerY, nil, 50)
 			concluido.destination = "levels"
