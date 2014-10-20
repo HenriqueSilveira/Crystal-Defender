@@ -21,16 +21,16 @@ db:exec(tabelaProgresso)
 
 --Função que atualiza a variável global progresso através de um select no banco de dados. Verifica se o id é nulo e insere a primeira linha da tabela caso verdadeiro. Limita a pesquisa somente a primeira linha.
 function atualizaProgressoF()
+	if id == nil then
+		print ("inserida primeira linha")
+		local insereProgresso = [[INSERT INTO tabelaProgresso VALUES (1, 0);]]
+		db:exec (insereProgresso)
+	end	
 	for row in db:nrows ("SELECT * FROM tabelaProgresso LIMIT 1") do
 		id = row.id
 		progresso = row.valor
 		print (progresso.." -Progresso")
 		print (id.." -ID")
-	end	
-	if id == nil then
-		print ("inserida primeira linha")
-		local insereProgresso = [[INSERT INTO tabelaProgresso VALUES (1, 0);]]
-		db:exec (insereProgresso)
 	end	
 end
 

@@ -37,8 +37,9 @@ function scene:createScene( event )
 	local tm
 	local tmrecarga
 	local contInimigos = 3
-	local velocidadeIni = 5000
+	local intervaloMonstros = 4000
 	local numBalas = 6
+	local danoBala = 1
 
 	--Opções dos cortes do sprite de atirar. Possui dois frames de tamanhos diferentes.
 	local options ={
@@ -106,6 +107,11 @@ function scene:createScene( event )
 		{name = "bala0", start = 7, count = 1}
 	}
 
+	local tiposMonstros = {
+		{vida = 3, velocidade = 5000},
+		{vida = 6, velocidade = 10000}
+	}
+
 	--Inicializa e posiciona a sprite do contador de balas. Inicia no sprite com o cartucho cheio.
 	local contBalas = display.newSprite (folhaBalas, sequenceDataBalas)
 	contBalas.x = widthScn - 80
@@ -120,8 +126,7 @@ function scene:createScene( event )
 	personagem.y = 360
 	physics.addBody (personagem, "static", {bounce = 0, density = 1, friction = 0})
 	personagem.name = "personagem"
-	--personagem.vida = 10
-	--print (personagem.vida)
+	personagem.vida = 6
 	group:insert (personagem)
 
 	--Inicializa e posiciona as imagens
@@ -143,6 +148,7 @@ function scene:createScene( event )
 	cristais.y = display.contentHeight/2
 	physics.addBody (cristais, "static", {bounce = 0, density = 1, friction = 0})
 	cristais.name = "cristal"
+	cristais.vida = 6
 	group:insert (cristais)
 
 	local setaCima = display.newImage ("Imagens/setas.png")
@@ -233,14 +239,13 @@ function scene:createScene( event )
 			bala.x = personagem.x + 30
 			bala.y = personagem.y - 70
 			bala.name = "bala"
+			bala.dano = danoBala
+			bala.collision = onBalaCollision
+			bala:addEventListener ("collision", bala)
 			group:insert (bala)
 
 			--Recebe o objeto bala apos concluir a transição e a apaga
 			local apagarBala = function ( obj )
-					--if personagem.vida == 0 then
-					--	derrota()
-					--end	
-					--personagem.vida = personagem.vida - 1
 					display.remove (obj)
 			end
 			--Move a bala pela tela e muda sprite do personagem para atirando. Ativa também o delay entre disparos.
@@ -255,18 +260,24 @@ function scene:createScene( event )
 	-- Função para criar e movimentar os monstros aleatoriamente. Chamada com o numero de monstros que o level exige.
 	function criarMonstro()
 		numInimigos = numInimigos + 1
-		inimigosArray [numInimigos] = display.newImage ("Imagens/monstro.png")
+		local selecionaMonstro = 1
+		inimigosArray [numInimigos] = display.newImage ("Imagens/monstro"..selecionaMonstro..".png")
 		physics.addBody (inimigosArray [numInimigos],  {bounce = 0, density = 1, friction = 0})
 		group:insert (inimigosArray [numInimigos])
 
 		inimigosArray [numInimigos].name = "monstro"
+		inimigosArray [numInimigos].vida = tiposMonstros [selecionaMonstro].vida
+		inimigosArray [numInimigos].velocidade = tiposMonstros [selecionaMonstro].velocidade
+		inimigosArray [numInimigos].isFixedRotation = true
 		inimigosArray [numInimigos].x = display.contentWidth + 30
 		inimigosArray [numInimigos].y = posY [math.floor (math.random()*3) + 1]
+		inimigosArray [numInimigos].collision = onMonstroCollision
+		inimigosArray [numInimigos]:addEventListener ("collision", inimigosArray [numInimigos])
 
 		-- Movimenta os inimigos em linha reta até o cristal
-		transition.to (inimigosArray [numInimigos], {time = math.random(velocidadeIni, velocidadeIni*2), x = cristais.x, y = inimigosArray [numInimigos].y})
+		transition.to (inimigosArray [numInimigos], {time = inimigosArray[numInimigos].velocidade, x = cristais.x, y = inimigosArray [numInimigos].y})
 	end
-	tm = timer.performWithDelay (5000, criarMonstro, contInimigos)
+	tm = timer.performWithDelay (intervaloMonstros, criarMonstro, contInimigos)
 
 	--Função que encerra o jogo com a derrota do jogador e cria o botao para voltar a seleção de leveis. 
 	function derrota ()
@@ -278,9 +289,9 @@ function scene:createScene( event )
 		group:insert (derrotatxt)
 	end
 
-	-- Função que encerra a fase com o jogador sendo vitorioso. Altera o valor da variável progresso através do BD e chama a função para atualizar a variável para liberar a próxima fase.
+	-- Função que encerra a fase com o jogador sendo vitorioso, checando se o personagem/cristal possui vida. Altera o valor da variável progresso através do BD e chama a função para atualizar a variável para liberar a próxima fase.
 	function vitoria()
-		if contInimigos == 0 then
+		if contInimigos == 0 and personagem.vida > 0 and cristais.vida > 0 then
 			encerra ()
 			if progresso < 1 then
 				local atualizaProgresso = [[UPDATE tabelaProgresso SET valor=1 WHERE id=1;]]
@@ -293,28 +304,44 @@ function scene:createScene( event )
 		end	 
 	end	
 
-
-	--Cria o evento de detecção de colisão
-	function onCollision (event)
-
-		-- Detecta colisão entre a bala e o monstro. Remove ambos
-		if ((event.object1.name == "bala" and event.object2.name == "monstro") or (event.object1.name == "monstro" and event.object2.name == "bala")) then
-				display.remove (event.object1)
-				display.remove (event.object2)
+	--Função que trata a colisão da bala.
+	function onBalaCollision (self, event)
+		if event.phase == "began" then
+			event.other.vida = event.other.vida - self.dano
+			display.remove (self)
+			if event.other.vida == 0 then
+				display.remove (self)
+				display.remove (event.other)
 				contInimigos = contInimigos - 1
 				contador.text = "Inimigos restantes: "..contInimigos
 				vitoria ()
-		end
+			end
+		end		
+	end
 
-		--Detecta colisão entre o monstro e o cristal/personagem. Encerra o jogo
-		if ((event.object1.name == "cristal" and event.object2.name == "monstro") or (event.object1.name == "personagem" and event.object2.name == "monstro")) then
-			derrota ()
-		end	
+	--Função que trata a colisão dos monstros.
+	function onMonstroCollision(self, event)
+		if event.phase == "began" then
+			if event.other.name == "personagem" or event.other.name == "cristal" then
+				event.other.vida = event.other.vida - self.vida
+				print (event.other.vida)
+				display.remove(self)
+				contInimigos = contInimigos - 1
+				contador.text = "Inimigos restantes: "..contInimigos
+				vitoria ()
+				if event.other.vida == 0 then
+					derrota ()
+				end
+			end
+		end			
 	end
 
 	--Função que detecta a movimentação do dispositivo e recarrega o cartucho.
 	function trataAcelerometro(event)
 		if event.isShake then
+			if tmrecarga ~= nil then
+				timer.cancel (tmrecarga)
+			end
 			recarrega ()
 		end	
 	end
@@ -358,7 +385,7 @@ function scene:createScene( event )
 	setaBaixo:addEventListener ("tap", setaBaixo)
 	btnAtirar:addEventListener ("tap", btnAtirar)
 	instrucoes:addEventListener ("tap", instrucoes)	
-	Runtime:addEventListener ("collision", onCollision)
+	--Runtime:addEventListener ("collision", onCollision)
 	Runtime:addEventListener ("accelerometer", trataAcelerometro)
 
 end

@@ -22,9 +22,11 @@ function scene:createScene( event )
 	background.y = centerY
 	group:insert(background)
 
-	local resetaJogo = display.newText ("Reset", 0, 0, nil, 50)
+	local resetaJogo = display.newImage ("Imagens/botao.png")
 	resetaJogo.x = centerX
-	resetaJogo.y = centerY
+	resetaJogo.y = centerY - 30
+	resetaJogo.destination = "confirmaReset"
+	resetaJogo:addEventListener ("tap", apertarBotao)
 	group:insert (resetaJogo)
 
 	local backBtn = display.newImage ("Imagens/botaoVoltar.png")
@@ -34,13 +36,6 @@ function scene:createScene( event )
 	backBtn:addEventListener ("tap", apertarBotao)
 	group:insert (backBtn)
 
-	--Função que reseta o jogo para o início e apaga todo o avanço de fases.
-	function resetaJogo:tap(event)
-		local reset = [[UPDATE tabelaProgresso SET valor=0 WHERE id=1;]]
-		db:exec(reset)
-	end
-
-	resetaJogo:addEventListener ("tap", resetaJogo)
 end
 
 function scene:enterScene( event )
