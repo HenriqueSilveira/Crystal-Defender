@@ -28,7 +28,7 @@ function scene:createScene( event )
 	function checaProgresso()
 		atualizaProgressoF()
 		if progresso >= 1 then
-			local fase2 = display.newImage ("Imagens/fase2Desbloqueada.png")
+			local fase2 = display.newImage ("Imagens/fase2DesbloqueadaNova.png")
 			fase2.x = centerX + 60 
 			fase2.y = centerY - 83
 			fase2.destination = "fase2"

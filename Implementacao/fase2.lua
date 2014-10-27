@@ -29,7 +29,7 @@ function scene:createScene( event )
 	require "sqlite3"
 
 	--Cria um array com as posições que os monstros podem nascer e um array com todos os inimigos criados
-	local posY = {122, 366, 580}
+	local posY = {430, 650, 550}
 	local inimigosArray = {}
 
 	--Cria uma variável global com o número de inimigos criados, uma variável para receber o timer dos inimigos, uma variável para a velocidade dos inimigos e uma variável com o número de inimigos que a fase possui.
@@ -37,39 +37,9 @@ function scene:createScene( event )
 	local tm
 	local tmrecarga
 	local contInimigos = 6
-	local intervaloMonstros = 3000
+	local intervaloMonstros = 4000
 	local numBalas = 6
 	local danoBala = 1
-
-	--Opções dos cortes do sprite de atirar. Possui dois frames de tamanhos diferentes.
-	local options ={
-		frames = {
-		-- Frame 1, sem atirar
-			{
-				x = 0,
-				y = 0,
-				width = 129,
-				height = 163,
-				--Valores para ajustar o posicionamento partindo de uma imagem "sem bordas".
-				sourceX = 0,
-				sourceY = 0,
-				sourceWidth = 171,
-				sourceHeight = 166
-			},
-		-- Frame 2, atirando
-			{
-				x = 135,
-				y = 0,
-				width = 172,
-				height = 163,
-				--Valores para ajustar o posicionamento partindo de uma imagem "sem bordas".
-				sourceX = 6,
-				sourceY = 0,
-				sourceWidth = 171,
-				sourceHeight = 166
-			}
-		}
-	}
 
 	--Opções dos cortes da sprite do contador de balas.
 	local optionsBalas ={
@@ -80,21 +50,6 @@ function scene:createScene( event )
 
 	--Importa a folha de sprite do contador de balas e aplica os cortes do options.
 	local folhaBalas = graphics.newImageSheet ("Imagens/spriteBalas.png", optionsBalas)
-
-	--Importa a folha de sprite e aplica os cortes do options.
-	local folha = graphics.newImageSheet ("Imagens/SpriteTiro.png", options)
-
-	--Define a sequências de frames para a animação baseada na folha de sprites.
-	local sequenceData = {
-		{
-			name = "atirando",
-			start = 1,
-			count = 2,
-			time = 200,
-			loopCount = 1,
-			loopDirection = "bounce"
-		}
-	}
 
 	--Define a sequência de frames do contador de balas. Todos so possuem um frame.
 	local sequenceDataBalas = {
@@ -107,9 +62,44 @@ function scene:createScene( event )
 		{name = "bala0", start = 7, count = 1}
 	}
 
+	--Cria uma tabela com os tipos de monstros e suas características.
 	local tiposMonstros = {
 		{vida = 3, velocidade = 5000},
 		{vida = 6, velocidade = 10000}
+	}
+
+	--Faz a requisição das medidas dos cortes, importa a folha para aplicar os cortes e define as sequencias da sprite do personagem.
+	local optionsPersonagem = require ("spriteBoneco")
+	local folhaPersonagem = graphics.newImageSheet ("Imagens/spriteBoneco.png", optionsPersonagem.sheetData)
+	local sequenceDataPersonagem = {
+		{name="parado", start=4, count = 1},
+		{name="atirando", frames = {7, 8, 1, 3, 4}, time = 500, loopCount = 1},
+		{name="andarCima", frames = {5, 6, 4}, time = 1000, loopCount = 1},
+		{name="andarBaixo", frames = {9, 10, 4}, time = 1000, loopCount = 1},
+		{name="dano", frames = {4, 11}, time = 400, loopCount = 1, loopDirection = "bounce"},
+		{name="morto", start = 2, count = 1}
+	}
+
+	--Faz a requisição das medidas dos cortes, importa a folha para aplicar os cortes e define as sequencias da sprite do monstro.
+	local optionsMonstro = require ("spriteMonstro")
+	local folhaMonstro1 = graphics.newImageSheet ("Imagens/spriteMonstro.png", optionsMonstro.sheetData)
+	local sequenceDataMonstro1 = {
+		{name = "vida3", start = 4, count = 1},
+		{name = "vida2", start = 1, count = 1},
+		{name = "vida1", start = 2, count = 1},
+		{name = "vida0", start = 3, count = 1}
+	}
+
+	local optionsMonstro2 = require ("spriteMonstro2")
+	local folhaMonstro2 = graphics.newImageSheet ("Imagens/spriteMonstro2.png", optionsMonstro2.sheetData)
+	local sequenceDataMonstro2 = {
+		{name = "vida6", start = 7, count = 1},
+		{name = "vida5", start = 1, count = 1},
+		{name = "vida4", start = 2, count = 1},
+		{name = "vida3", start = 3, count = 1},
+		{name = "vida2", start = 4, count = 1},
+		{name = "vida1", start = 5, count = 1},
+		{name = "vida0", start = 6, count = 1}
 	}
 
 	--Inicializa e posiciona a sprite do contador de balas. Inicia no sprite com o cartucho cheio.
@@ -121,48 +111,51 @@ function scene:createScene( event )
 	contBalas:play()
 
 	--Cria e posiciona o objeto personagem com sprite.
-	local personagem = display.newSprite (folha, sequenceData)
-	personagem.x = 255
-	personagem.y = 360
+	local personagem = display.newSprite (folhaPersonagem, sequenceDataPersonagem)
+	personagem.x = 210
+	personagem.y = 550
 	physics.addBody (personagem, "static", {bounce = 0, density = 1, friction = 0})
-	personagem.name = "personagem"
 	personagem.vida = 6
+	personagem.name = "personagem"
+	personagem:setSequence ("parado")
+	personagem:play()
 	group:insert (personagem)
 
 	--Inicializa e posiciona as imagens
-	local fundo = display.newImage ("Imagens/Background.png")
+	local fundo = display.newImage ("Imagens/BackgroundNovo.png")
 	fundo.x = display.contentWidth/2
 	fundo.y = display.contentHeight/2
 	group:insert (fundo)
 	fundo:toBack ()
 
 	--Insere um background invisível para quando a fase acabar.
-	local fundo2 = display.newImage ("Imagens/BackgroundEmbaçado.png")
+	local fundo2 = display.newImage ("Imagens/BackgroundNovoEmbacado.png")
 	fundo2.x = centerX
 	fundo2.y = centerY
 	fundo2.alpha = 0
 	group:insert (fundo2)
 
-	local cristais = display.newImage ("Imagens/cristais.png")
+	local cristais = display.newImage ("Imagens/cristaisNovo.png")
 	cristais.x = 80
-	cristais.y = display.contentHeight/2
+	cristais.y = 560
 	physics.addBody (cristais, "static", {bounce = 0, density = 1, friction = 0})
 	cristais.name = "cristal"
 	cristais.vida = 6
+	cristais.alpha = 1
 	group:insert (cristais)
 
 	local setaCima = display.newImage ("Imagens/setas.png")
 	setaCima.x = 235
-	setaCima.y = 100
+	setaCima.y = 430
 	group:insert (setaCima)
 
 	local setaBaixo = display.newImage ("Imagens/setas.png")
 	setaBaixo.x = 235
-	setaBaixo.y = 620
+	setaBaixo.y = 650
 	group:insert (setaBaixo)
 
 	local btnAtirar = display.newImage ("Imagens/setas.png")
-	btnAtirar.x = 1200
+	btnAtirar.x = 1225
 	btnAtirar.y = 625
 	btnAtirar.name = "btnAtirar"
 	group:insert (btnAtirar)
@@ -182,20 +175,24 @@ function scene:createScene( event )
 
 	--Cria o evento de apertar a seta para cima e move o personagem
 	function setaCima:tap (event)
-		if (personagem.y < display.contentHeight -480) then
-			personagem.y = 140
-		else	
-			personagem.y = personagem.y - 220
-		end	
+		local moveCima = function ()
+			personagem:setSequence ("andarCima")
+			personagem:play()
+		end
+		if personagem.y > 440 then
+			transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y - 110, onStart = moveCima})
+		end		
 	end
 	
 
 	--Cria o evento de apertar a seta para baixo e move o personagem
 	function setaBaixo:tap (event)
-		if (personagem.y > display.contentHeight -240) then
-			personagem.y = 580
-		else	
-			personagem.y = personagem.y + 220
+		local moveBaixo = function ()
+			personagem:setSequence ("andarBaixo")
+			personagem:play()
+		end
+		if personagem.y < 660 then
+			transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y + 110, onStart = moveBaixo})	
 		end	
 	end
 
@@ -225,23 +222,29 @@ function scene:createScene( event )
 		--Checa se o cartucho não está vazio. Caso não esteja, efetua o disparo e atualiza o cartucho.
 		if numBalas ~= 0 then
 			atualizaCartucho ()
-			local bala = display.newImage ("Imagens/Bala.png")
+			local bala = display.newImage ("Imagens/balaNova.png")
 			physics.addBody (bala, "static", {density = 0.5, friction = 0, bounce = 0} )
 			bala.x = personagem.x + 30
-			bala.y = personagem.y - 70
+			bala.y = personagem.y - 20
+			bala.alpha = 0
 			bala.name = "bala"
 			bala.dano = danoBala
 			bala.collision = onBalaCollision
 			bala:addEventListener ("collision", bala)
 			group:insert (bala)
-
+		
+			personagem:setSequence ("atirando")
+			personagem:play()
+			local criaBala = function ()
+				bala.alpha = 1
+				audio.play (tiro)
+			end
 			--Recebe o objeto bala apos concluir a transição e a apaga
 			local apagarBala = function ( obj )
-					display.remove (obj)
+				display.remove (obj)
 			end
 			--Move a bala pela tela e muda sprite do personagem para atirando. Ativa também o delay entre disparos.
-			audio.play (tiro)
-			transition.to (bala, {time = 800, x = 1290, y = personagem.y -70, onStart = personagem:play(), onComplete = apagarBala})
+			transition.to (bala, {delay = 300, time = 800, x = 1290, y = bala.y, onStart = criaBala, onComplete = apagarBala})
 		--Insere o som de arma descarregada caso o contador de balas esteja vazio.	
 		elseif numBalas == 0 then
 			audio.play(semBala)
@@ -252,7 +255,11 @@ function scene:createScene( event )
 	function criarMonstro()
 		numInimigos = numInimigos + 1
 		local selecionaMonstro = math.random (1,2)
-		inimigosArray [numInimigos] = display.newImage ("Imagens/monstro"..selecionaMonstro..".png")
+		if selecionaMonstro == 1 then
+			inimigosArray [numInimigos] = display.newSprite (folhaMonstro1, sequenceDataMonstro1)
+		elseif selecionaMonstro == 2 then
+			inimigosArray [numInimigos] = display.newSprite (folhaMonstro2, sequenceDataMonstro2)
+		end		
 		physics.addBody (inimigosArray [numInimigos],  {bounce = 0, density = 1, friction = 0})
 		group:insert (inimigosArray [numInimigos])
 
@@ -272,6 +279,10 @@ function scene:createScene( event )
 
 	--Função que encerra o jogo com a derrota do jogador e cria o botao para voltar a seleção de leveis. 
 	function derrota ()
+		if personagem.vida <= 0 then
+			personagem:setSequence ("morto")
+			personagem:play()
+		end	
 		timer.cancel (tm)
 		encerra ()
 		local derrotatxt = display.newText ("Fim de Jogo", centerX, centerY, nil, 50)
@@ -299,6 +310,8 @@ function scene:createScene( event )
 	function onBalaCollision (self, event)
 		if event.phase == "began" then
 			event.other.vida = event.other.vida - self.dano
+			event.other:setSequence ("vida"..event.other.vida)
+			event.other:play()
 			display.remove (self)
 			if event.other.vida == 0 then
 				display.remove (self)
@@ -314,6 +327,10 @@ function scene:createScene( event )
 	function onMonstroCollision(self, event)
 		if event.phase == "began" then
 			if event.other.name == "personagem" or event.other.name == "cristal" then
+				if event.other.name == "personagem" then
+					personagem:setSequence ("dano")
+					personagem:play()
+				end	
 				event.other.vida = event.other.vida - self.vida
 				print (event.other.vida)
 				display.remove(self)
@@ -359,22 +376,25 @@ function scene:createScene( event )
 		display.remove (reloading)
 		display.remove (contBalas)
 		display.remove (contBalasTxt)
+		display.remove (instrucoes)
 	end
 
 	--Função que limpa os inimigos, funções e troca o background. Faz Fade Out no personagem e cristal.
 	function encerra()
 		apagarInimigos ()
 		apagarFuncoes ()
-		transition.fadeOut(personagem, {time=1000})
+		if personagem.vida > 0 then
+			transition.fadeOut(personagem, {time=1000})
+			transition.fadeIn (fundo2, {time = 1000})
+		end	
 		transition.fadeOut (cristais, {time=1000})
-		transition.fadeIn (fundo2, {time = 1000})
+
 	end
 
 	-- Listeners dos botões e da detecção de colisão
 	setaCima:addEventListener ("tap", setaCima)
 	setaBaixo:addEventListener ("tap", setaBaixo)
-	btnAtirar:addEventListener ("tap", btnAtirar)	
-	--Runtime:addEventListener ("collision", onCollision)
+	btnAtirar:addEventListener ("tap", btnAtirar)
 	Runtime:addEventListener ("accelerometer", trataAcelerometro)
 
 end
