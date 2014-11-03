@@ -36,7 +36,7 @@ function scene:createScene( event )
 	local numInimigos = 0
 	local tm
 	local tmrecarga
-	local contInimigos = 6
+	local contInimigos = 3
 	local intervaloMonstros = 4000
 	local numBalas = 6
 	local danoBala = 1
@@ -82,24 +82,12 @@ function scene:createScene( event )
 
 	--Faz a requisição das medidas dos cortes, importa a folha para aplicar os cortes e define as sequencias da sprite do monstro.
 	local optionsMonstro = require ("spriteMonstro")
-	local folhaMonstro1 = graphics.newImageSheet ("Imagens/spriteMonstro.png", optionsMonstro.sheetData)
-	local sequenceDataMonstro1 = {
+	local folhaMonstro = graphics.newImageSheet ("Imagens/spriteMonstro.png", optionsMonstro.sheetData)
+	local sequenceDataMonstro = {
 		{name = "vida3", start = 4, count = 1},
 		{name = "vida2", start = 1, count = 1},
 		{name = "vida1", start = 2, count = 1},
 		{name = "vida0", start = 3, count = 1}
-	}
-
-	local optionsMonstro2 = require ("spriteMonstro2")
-	local folhaMonstro2 = graphics.newImageSheet ("Imagens/spriteMonstro2.png", optionsMonstro2.sheetData)
-	local sequenceDataMonstro2 = {
-		{name = "vida6", start = 7, count = 1},
-		{name = "vida5", start = 1, count = 1},
-		{name = "vida4", start = 2, count = 1},
-		{name = "vida3", start = 3, count = 1},
-		{name = "vida2", start = 4, count = 1},
-		{name = "vida1", start = 5, count = 1},
-		{name = "vida0", start = 6, count = 1}
 	}
 
 	--Inicializa e posiciona a sprite do contador de balas. Inicia no sprite com o cartucho cheio.
@@ -173,14 +161,25 @@ function scene:createScene( event )
 	local contBalasTxt = display.newText ("Cartucho: ", widthScn - 240, topScn + 100, nil, 35)
 	group:insert(contBalasTxt)
 
+	local vidaPersonagem = display.newText ("Vida Personagem: "..personagem.vida, centerX - 450, topScn + 30, nil, 35)
+	group:insert(vidaPersonagem)
+
+	local vidaCristal = display.newText ("Vida Cristal: "..cristais.vida, centerX - 500, topScn + 80, nil, 35)
+	group:insert (vidaCristal)
+
 	--Cria o evento de apertar a seta para cima e move o personagem
 	function setaCima:tap (event)
 		local moveCima = function ()
 			personagem:setSequence ("andarCima")
 			personagem:play()
 		end
-		if personagem.y > 440 then
-			transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y - 110, onStart = moveCima})
+		local ficaParado = function ()
+			personagem:setSequence ("parado")
+		end
+		if personagem.sequence == "parado" then
+			if personagem.y > 440 then
+				transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y - 110, onStart = moveCima, onComplete = ficaParado})
+			end
 		end		
 	end
 	
@@ -191,8 +190,13 @@ function scene:createScene( event )
 			personagem:setSequence ("andarBaixo")
 			personagem:play()
 		end
-		if personagem.y < 660 then
-			transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y + 110, onStart = moveBaixo})	
+		local ficaParado = function ()
+			personagem:setSequence ("parado")
+		end		
+		if personagem.sequence == "parado" then
+			if personagem.y < 660 then
+				transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y + 110, onStart = moveBaixo, onComplete = ficaParado})	
+			end
 		end	
 	end
 
@@ -254,12 +258,8 @@ function scene:createScene( event )
 	-- Função para criar e movimentar os monstros aleatoriamente. Chamada com o numero de monstros que o level exige.
 	function criarMonstro()
 		numInimigos = numInimigos + 1
-		local selecionaMonstro = math.random (1,2)
-		if selecionaMonstro == 1 then
-			inimigosArray [numInimigos] = display.newSprite (folhaMonstro1, sequenceDataMonstro1)
-		elseif selecionaMonstro == 2 then
-			inimigosArray [numInimigos] = display.newSprite (folhaMonstro2, sequenceDataMonstro2)
-		end		
+		local selecionaMonstro = 1
+		inimigosArray [numInimigos] = display.newSprite (folhaMonstro, sequenceDataMonstro)
 		physics.addBody (inimigosArray [numInimigos],  {bounce = 0, density = 1, friction = 0})
 		group:insert (inimigosArray [numInimigos])
 
@@ -336,8 +336,10 @@ function scene:createScene( event )
 				display.remove(self)
 				contInimigos = contInimigos - 1
 				contador.text = "Inimigos restantes: "..contInimigos
+				vidaPersonagem.text = "Vida Personagem: "..personagem.vida
+				vidaCristal.text = "Vida Cristal: "..cristais.vida
 				vitoria ()
-				if event.other.vida == 0 then
+				if event.other.vida <= 0 then
 					derrota ()
 				end
 			end
@@ -351,6 +353,12 @@ function scene:createScene( event )
 				timer.cancel (tmrecarga)
 			end
 			recarrega ()
+		end	
+	end
+
+	function trataSprite(event)
+		if ((event.target.sequence == "atirando" or event.target.sequence == "dano") and (event.phase == "ended")) then
+			personagem:setSequence ("parado")
 		end	
 	end
 
@@ -376,6 +384,8 @@ function scene:createScene( event )
 		display.remove (reloading)
 		display.remove (contBalas)
 		display.remove (contBalasTxt)
+		display.remove (vidaPersonagem)
+		display.remove (vidaCristal)
 		display.remove (instrucoes)
 	end
 
@@ -395,6 +405,7 @@ function scene:createScene( event )
 	setaCima:addEventListener ("tap", setaCima)
 	setaBaixo:addEventListener ("tap", setaBaixo)
 	btnAtirar:addEventListener ("tap", btnAtirar)
+	personagem:addEventListener ("sprite", trataSprite)
 	Runtime:addEventListener ("accelerometer", trataAcelerometro)
 
 end

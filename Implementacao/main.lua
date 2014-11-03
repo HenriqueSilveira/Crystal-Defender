@@ -11,7 +11,7 @@ require ("sqlite3")
 path = system.pathForFile( "data.db", system.DocumentsDirectory )
 db = sqlite3.open( path )
 
---Cria a tabelaProgresso caso já não exista no arquivo. Possui duas colunas (id[auto-incrementável] e valor).
+--Cria a tabelaProgresso caso já não exista no arquivo. Possui duas colunas (id e valor).
 tabelaProgresso = [[CREATE TABLE IF NOT EXISTS tabelaProgresso (id INTEGER PRIMARY KEY, valor INTEGER);]]
 db:exec(tabelaProgresso)
 
@@ -48,6 +48,7 @@ Runtime:addEventListener ("system", trataSistema)
 --Carrega a musica de fundo e toca em loop infinito.
 musicaBg = audio.loadStream ("Sons/BgMusic.mp3")
 audio.play (musicaBg, {loops = -1, channel = 1})
+
 
 --Efetua a chamada da storyboard
 local storyboard = require ("storyboard")

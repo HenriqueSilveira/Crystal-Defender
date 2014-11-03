@@ -166,14 +166,25 @@ function scene:createScene( event )
 	local contBalasTxt = display.newText ("Cartucho: ", widthScn - 240, topScn + 100, nil, 35)
 	group:insert(contBalasTxt)
 
+	local vidaPersonagem = display.newText ("Vida Personagem: "..personagem.vida, centerX - 450, topScn + 30, nil, 35)
+	group:insert(vidaPersonagem)
+
+	local vidaCristal = display.newText ("Vida Cristal: "..cristais.vida, centerX - 500, topScn + 80, nil, 35)
+	group:insert (vidaCristal)
+
 	--Cria o evento de apertar a seta para cima e move o personagem
 	function setaCima:tap (event)
 		local moveCima = function ()
 			personagem:setSequence ("andarCima")
 			personagem:play()
 		end
-		if personagem.y > 440 then
-			transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y - 110, onStart = moveCima})
+		local ficaParado = function ()
+			personagem:setSequence ("parado")
+		end
+		if personagem.sequence == "parado" then
+			if personagem.y > 440 then
+				transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y - 110, onStart = moveCima, onComplete = ficaParado})
+			end
 		end		
 	end
 	
@@ -184,8 +195,13 @@ function scene:createScene( event )
 			personagem:setSequence ("andarBaixo")
 			personagem:play()
 		end
-		if personagem.y < 660 then
-			transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y + 110, onStart = moveBaixo})	
+		local ficaParado = function ()
+			personagem:setSequence ("parado")
+		end		
+		if personagem.sequence == "parado" then
+			if personagem.y < 660 then
+				transition.to (personagem, {time = 800, x = personagem.x, y = personagem.y + 110, onStart = moveBaixo, onComplete = ficaParado})	
+			end
 		end	
 	end
 
@@ -329,8 +345,10 @@ function scene:createScene( event )
 				display.remove(self)
 				contInimigos = contInimigos - 1
 				contador.text = "Inimigos restantes: "..contInimigos
+				vidaPersonagem.text = "Vida Personagem: "..personagem.vida
+				vidaCristal.text = "Vida Cristal: "..cristais.vida
 				vitoria ()
-				if event.other.vida == 0 then
+				if event.other.vida <= 0 then
 					derrota ()
 				end
 			end
@@ -344,6 +362,12 @@ function scene:createScene( event )
 				timer.cancel (tmrecarga)
 			end
 			recarrega ()
+		end	
+	end
+
+	function trataSprite(event)
+		if ((event.target.sequence == "atirando" or event.target.sequence == "dano") and (event.phase == "ended")) then
+			personagem:setSequence ("parado")
 		end	
 	end
 
@@ -369,6 +393,8 @@ function scene:createScene( event )
 		display.remove (reloading)
 		display.remove (contBalas)
 		display.remove (contBalasTxt)
+		display.remove (vidaPersonagem)
+		display.remove (vidaCristal)
 		display.remove (instrucoes)
 	end
 
@@ -389,6 +415,7 @@ function scene:createScene( event )
 	setaBaixo:addEventListener ("tap", setaBaixo)
 	btnAtirar:addEventListener ("tap", btnAtirar)
 	instrucoes:addEventListener ("tap", instrucoes)	
+	personagem:addEventListener ("sprite", trataSprite)
 	Runtime:addEventListener ("accelerometer", trataAcelerometro)
 
 end
